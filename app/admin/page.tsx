@@ -26,16 +26,21 @@ export default function AdminPage() {
       .order("uploaded_at", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.error("LOAD ERROR:", error);
       setLoading(false);
       return;
     }
 
     const photosWithUrls = await Promise.all(
       (data || []).map(async (photo) => {
-        const { data: signedData } = await supabase.storage
-          .from("Photos")
-          .createSignedUrl(photo.file_path, 3600);
+        const { data: signedData, error: signedError } =
+          await supabase.storage
+            .from("Photos")
+            .createSignedUrl(photo.file_path, 3600);
+
+        if (signedError) {
+          console.error("SIGNED URL ERROR:", signedError);
+        }
 
         return {
           ...photo,
@@ -62,7 +67,7 @@ export default function AdminPage() {
       .eq("id", id);
 
     if (error) {
-      console.error(error);
+      console.error("UPDATE ERROR:", error);
       alert("Não foi possível atualizar a fotografia.");
       return;
     }
@@ -83,29 +88,47 @@ export default function AdminPage() {
 
     if (!confirmed) return;
 
-    const { error: storageError } = await supabase.storage
-      .from("Photos")
-      .remove([photo.file_path]);
+    const { error: storageError } =
+      await supabase.storage
+        .from("Photos")
+        .remove([photo.file_path]);
 
     if (storageError) {
-      console.error(storageError);
-      alert("Não foi possível apagar o ficheiro.");
+      console.error(
+        "STORAGE DELETE ERROR:",
+        storageError
+      );
+
+      alert(
+        "Não foi possível apagar a fotografia do Supabase."
+      );
+
       return;
     }
 
-    const { error: databaseError } = await supabase
-      .from("photos")
-      .delete()
-      .eq("id", photo.id);
+    const { error: databaseError } =
+      await supabase
+        .from("photos")
+        .delete()
+        .eq("id", photo.id);
 
     if (databaseError) {
-      console.error(databaseError);
-      alert("O ficheiro foi apagado, mas houve um erro na base de dados.");
+      console.error(
+        "DATABASE DELETE ERROR:",
+        databaseError
+      );
+
+      alert(
+        "A fotografia foi apagada do Storage, mas houve um erro ao apagar o registo."
+      );
+
       return;
     }
 
     setPhotos((current) =>
-      current.filter((item) => item.id !== photo.id)
+      current.filter(
+        (item) => item.id !== photo.id
+      )
     );
   }
 
@@ -124,7 +147,6 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-[#0d0a09] px-6 py-10 text-white">
       <div className="mx-auto max-w-6xl">
-
         <header className="mb-10">
           <p className="text-xs tracking-[0.4em] text-white/40">
             CARDOSO · 18 ANOS
@@ -176,17 +198,17 @@ export default function AdminPage() {
                 </div>
 
                 <div className="p-4">
-
                   <p className="truncate text-xs text-white/40">
-                    {photo.original_name || "Fotografia"}
+                    {photo.original_name ||
+                      "Fotografia"}
                   </p>
 
                   <div className="mt-4 flex gap-2">
-
                     <button
                       onClick={() =>
                         updatePhoto(photo.id, {
-                          approved: !photo.approved,
+                          approved:
+                            !photo.approved,
                         })
                       }
                       className={`flex-1 rounded-full px-3 py-3 text-xs tracking-[0.1em] transition ${
@@ -217,22 +239,21 @@ export default function AdminPage() {
                         ? "NA TV"
                         : "MOSTRAR TV"}
                     </button>
-
                   </div>
 
                   <button
-                    onClick={() => deletePhoto(photo)}
+                    onClick={() =>
+                      deletePhoto(photo)
+                    }
                     className="mt-2 w-full rounded-full border border-red-400/20 px-3 py-3 text-xs tracking-[0.1em] text-red-300 transition hover:border-red-400/50"
                   >
                     APAGAR
                   </button>
-
                 </div>
               </div>
             ))}
           </div>
         )}
-
       </div>
     </main>
   );
