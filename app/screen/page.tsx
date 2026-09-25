@@ -67,7 +67,7 @@ export default function ScreenPage() {
 
     const interval = setInterval(() => {
       loadPhotos();
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -79,7 +79,7 @@ export default function ScreenPage() {
       setCurrentIndex((current) =>
         (current + 1) % photos.length
       );
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(slideshow);
   }, [photos.length]);
